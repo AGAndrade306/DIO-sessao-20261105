@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #fff9f4;
+  --color-feed: #fbd5dc;
+  --color-feed-strong: #e89aa9;
+  --color-sleep: #d9ddf7;
+  --color-sleep-strong: #8f98d9;
+  --color-diaper: #fcefc4;
+  --color-diaper-strong: #d9b95c;
+  --color-ink: #3b4252;
+  --color-ink-soft: #6b7385;
+  --font-sans: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overflow-x: hidden;
+}

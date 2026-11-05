@@ -1,7 +1,7 @@
 # Diário do Bebê
 
 PWA simples para registrar mamadas, sonecas e trocas de fralda com uma mão só e ver "quando foi a última vez".
-Next.js 16 (App Router) + Tailwind v4 + Supabase (link mágico + Postgres com RLS).
+Next.js 16 (App Router) + Tailwind v4 + Supabase (login com e-mail e senha + Postgres com RLS).
 
 ## Rodar localmente
 
@@ -26,23 +26,23 @@ Nunca use a chave `service_role` aqui. O `.env.local` não é commitado.
 
 1. Crie um projeto em supabase.com.
 2. Abra o **SQL Editor**, cole todo o conteúdo de `supabase/schema.sql` e rode (cria as tabelas, o enum, o índice e as políticas de RLS).
-3. **Authentication → URL Configuration**:
+3. **Authentication → Sign In / Providers → Email**: deixe o provedor ligado e **desligue "Confirm email"**. Assim a conta criada no app já entra direto, sem depender de envio de e-mail. (Sem SMTP próprio, o Supabase só envia e-mails para membros da equipe do projeto.)
+4. **Authentication → URL Configuration** (só usado se você mantiver a confirmação de e-mail ligada):
    - **Site URL**: `https://SEU-APP.vercel.app`
    - **Redirect URLs**: `https://SEU-APP.vercel.app/auth/callback` e `http://localhost:3000/auth/callback`
-4. (Opcional, recomendado no celular) Por padrão o link mágico só funciona se for aberto no **mesmo navegador** em que foi pedido. Para funcionar em qualquer navegador/app de e-mail, em **Authentication → Emails → Magic Link** troque o link do template por:
-   `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email`
-   (o `/auth/callback` aceita os dois formatos).
 
-O e-mail padrão do Supabase tem limite baixo de envios por hora; para uso real configure um SMTP próprio.
+Se quiser manter a confirmação de e-mail, configure um SMTP próprio (o e-mail padrão do Supabase tem limite baixo e restrição de destinatários).
 
 ## Deploy na Vercel
 
 1. Em vercel.com → **Add New → Project**, importe este repositório do GitHub (framework detectado: Next.js).
 2. Em **Environment Variables**, adicione `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Deploy. Depois, atualize a Site URL e as Redirect URLs no Supabase com a URL final da Vercel (passo 3 acima).
-4. No celular: abra a URL, entre pelo link mágico e use "Adicionar à tela inicial".
+3. Deploy.
+4. No celular: abra a URL, toque em "Criar conta" e depois use "Adicionar à tela inicial".
 
 ## Decisões tomadas (as opções mais simples)
+
+- **Login com e-mail e senha** (em vez do link mágico do SPEC), porque o envio de e-mail padrão do Supabase é restrito. Recuperação de senha ficou fora do MVP. O `/auth/callback` continua existindo para o link de confirmação, caso ela seja ligada.
 
 - **Next 16:** o middleware se chama `proxy.ts` (nova convenção). Ele renova a sessão e manda quem não está logado para `/login`.
 - **Schema:** igual ao SPEC, mais um `check` garantindo `ended_at >= started_at`.

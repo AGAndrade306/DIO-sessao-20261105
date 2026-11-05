@@ -19,7 +19,7 @@ export default async function LoginPage({
       </div>
       <LoginForm
         initialError={
-          erro ? "Esse link expirou ou já foi usado. Peça um novo link abaixo." : null
+          erro ? "Esse link de confirmação expirou ou já foi usado. Tente entrar com seu e-mail e senha." : null
         }
       />
     </main>

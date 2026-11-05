@@ -20,8 +20,10 @@ function friendlyError(err: AuthErr): string {
     return "Senha fraca. Use pelo menos 6 caracteres.";
   if (code === "email_address_invalid" || (m.includes("invalid") && m.includes("email")))
     return "Esse e-mail não parece válido.";
-  if (["email_provider_disabled", "signup_disabled"].includes(code) || m.includes("signups not allowed") || m.includes("disabled"))
-    return "O cadastro por e-mail está desativado no Supabase.";
+  if (code === "email_provider_disabled" || m.includes("email signups are disabled") || m.includes("email logins are disabled"))
+    return "O login por e-mail está desligado no Supabase. Ative em Authentication → Sign In / Providers → Email.";
+  if (code === "signup_disabled" || m.includes("signups not allowed"))
+    return "O cadastro de novos usuários está desligado no Supabase. Ative “Allow new users to sign up”.";
   if (code === "email_address_not_authorized" || m.includes("not authorized"))
     return "O Supabase não pode enviar o e-mail de confirmação para este endereço. Desative “Confirm email” no Supabase ou configure um SMTP próprio.";
   if (m.includes("invalid api key") || code === "bad_jwt")

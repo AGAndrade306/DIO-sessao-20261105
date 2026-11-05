@@ -3,11 +3,23 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-function friendlyError(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes("rate limit") || m.includes("security purposes") || m.includes("too many"))
+type AuthErr = { message: string; code?: string; status?: number };
+
+function friendlyError(err: AuthErr): string {
+  const code = err.code ?? "";
+  const m = err.message.toLowerCase();
+  if (code === "email_address_not_authorized" || m.includes("not authorized"))
+    return "Este e-mail não está autorizado a receber links. Sem um SMTP próprio, o Supabase só envia e-mails para membros da equipe do projeto.";
+  if (["email_provider_disabled", "signup_disabled", "otp_disabled"].includes(code) || m.includes("disabled") || m.includes("not allowed"))
+    return "O login por e-mail (ou o cadastro de novos usuários) está desativado no Supabase.";
+  if (m.includes("invalid api key") || code === "bad_jwt")
+    return "Chave do Supabase inválida. Confira as variáveis de ambiente na Vercel.";
+  if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit" || m.includes("rate limit") || m.includes("security purposes"))
     return "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.";
-  if (m.includes("invalid") && m.includes("email")) return "Esse e-mail não parece válido.";
+  if (code === "email_address_invalid" || (m.includes("invalid") && m.includes("email")))
+    return "Esse e-mail não parece válido.";
+  if (m.includes("sending") || m.includes("smtp"))
+    return "O Supabase não conseguiu enviar o e-mail. Verifique a configuração de SMTP.";
   if (m.includes("fetch") || m.includes("network"))
     return "Sem conexão com o servidor. Verifique sua internet.";
   return "Não foi possível enviar o link agora. Tente novamente.";
@@ -17,10 +29,12 @@ export default function LoginForm({ initialError }: { initialError: string | nul
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(initialError);
+  const [detail, setDetail] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setDetail(null);
     const value = email.trim();
     if (!/^\S+@\S+\.\S+$/.test(value)) {
       setError("Digite um e-mail válido.");
@@ -33,8 +47,10 @@ export default function LoginForm({ initialError }: { initialError: string | nul
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) {
+      console.error("Erro ao enviar link mágico:", error);
       setStatus("idle");
-      setError(friendlyError(error.message));
+      setError(friendlyError(error));
+      setDetail([error.code ?? error.status, error.message].filter(Boolean).join(": "));
       return;
     }
     setStatus("sent");
@@ -74,6 +90,7 @@ export default function LoginForm({ initialError }: { initialError: string | nul
       {error && (
         <p className="rounded-2xl bg-feed/60 px-4 py-3 text-sm" role="alert">
           {error}
+          {detail && <span className="mt-1 block text-xs break-words text-ink-soft">Detalhe: {detail}</span>}
         </p>
       )}
       <button
